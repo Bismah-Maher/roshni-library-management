@@ -14,7 +14,8 @@ import {
 } from "lucide-react";
 import "./LibrarySettings.css";
 
-const API_URL = "https://roshni-library-management-xh7y.vercel.app/api/books";
+const API_URL =
+  "https://roshni-library-management-xh7y.vercel.app/api/settings";
 
 const defaultSettings = {
   libraryName: "",
@@ -27,11 +28,20 @@ const defaultSettings = {
 };
 
 const LibrarySettings = () => {
-  const [settings, setSettings] = useState(defaultSettings);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
+  const [settings, setSettings] =
+    useState(defaultSettings);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [saving, setSaving] =
+    useState(false);
+
+  const [message, setMessage] =
+    useState("");
+
+  const [error, setError] =
+    useState("");
 
   // ===============================
   // LOAD SETTINGS
@@ -42,11 +52,30 @@ const LibrarySettings = () => {
       setLoading(true);
       setError("");
 
-      const response = await fetch(API_URL);
-      const data = await response.json();
+      console.log(
+        "Loading settings from:",
+        API_URL
+      );
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to load settings");
+      const response =
+        await fetch(API_URL);
+
+      const data =
+        await response.json();
+
+      console.log(
+        "SETTINGS RESPONSE:",
+        data
+      );
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+        throw new Error(
+          data.message ||
+            "Failed to load settings"
+        );
       }
 
       setSettings({
@@ -54,7 +83,15 @@ const LibrarySettings = () => {
         ...data.settings,
       });
     } catch (err) {
-      setError(err.message || "Failed to load library settings");
+      console.error(
+        "SETTINGS LOAD ERROR:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Failed to load library settings"
+      );
     } finally {
       setLoading(false);
     }
@@ -69,12 +106,18 @@ const LibrarySettings = () => {
   // ===============================
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const {
+      name,
+      value,
+    } = e.target;
 
     setSettings((previous) => ({
       ...previous,
       [name]:
-        name === "borrowingPeriod" || name === "maxBooksPerMember"
+        name ===
+          "borrowingPeriod" ||
+        name ===
+          "maxBooksPerMember"
           ? Number(value)
           : value,
     }));
@@ -95,18 +138,44 @@ const LibrarySettings = () => {
       setMessage("");
       setError("");
 
-      const response = await fetch(API_URL, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(settings),
-      });
+      console.log(
+        "Saving settings to:",
+        API_URL
+      );
 
-      const data = await response.json();
+      console.log(
+        "SETTINGS REQUEST:",
+        settings
+      );
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to save settings");
+      const response =
+        await fetch(API_URL, {
+          method: "PUT",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify(
+            settings
+          ),
+        });
+
+      const data =
+        await response.json();
+
+      console.log(
+        "SETTINGS SAVE RESPONSE:",
+        data
+      );
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+        throw new Error(
+          data.message ||
+            "Failed to save settings"
+        );
       }
 
       setSettings({
@@ -114,9 +183,19 @@ const LibrarySettings = () => {
         ...data.settings,
       });
 
-      setMessage("Library settings saved successfully.");
+      setMessage(
+        "Library settings saved successfully."
+      );
     } catch (err) {
-      setError(err.message || "Failed to save library settings");
+      console.error(
+        "SETTINGS SAVE ERROR:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Failed to save library settings"
+      );
     } finally {
       setSaving(false);
     }
@@ -130,8 +209,16 @@ const LibrarySettings = () => {
     return (
       <section className="library-settings-page">
         <div className="settings-loading">
-          <Loader2 size={28} className="settings-spinner" />
-          <p>Loading library settings...</p>
+
+          <Loader2
+            size={28}
+            className="settings-spinner"
+          />
+
+          <p>
+            Loading library settings...
+          </p>
+
         </div>
       </section>
     );
@@ -139,262 +226,387 @@ const LibrarySettings = () => {
 
   return (
     <section className="library-settings-page">
-      {/* HEADER */}
+
+      {/* =========================
+          HEADER
+      ========================= */}
 
       <div className="settings-header">
+
         <div>
+
           <div className="settings-eyebrow">
+
             <Settings size={16} />
-            <span>LIBRARY CONFIGURATION</span>
+
+            <span>
+              LIBRARY CONFIGURATION
+            </span>
+
           </div>
 
-          <h1>Library Settings</h1>
+          <h1>
+            Library Settings
+          </h1>
 
           <p>
-            Manage your library information and borrowing rules.
+            Manage your library information
+            and borrowing rules.
           </p>
+
         </div>
 
         <div className="settings-header-icon">
           <Building2 size={30} />
         </div>
+
       </div>
 
-      {/* STATUS MESSAGE */}
+      {/* =========================
+          SUCCESS MESSAGE
+      ========================= */}
 
       {message && (
         <div className="settings-message success">
+
           <CheckCircle2 size={19} />
-          <span>{message}</span>
+
+          <span>
+            {message}
+          </span>
+
         </div>
       )}
+
+      {/* =========================
+          ERROR MESSAGE
+      ========================= */}
 
       {error && (
         <div className="settings-message error">
+
           <AlertCircle size={19} />
-          <span>{error}</span>
+
+          <span>
+            {error}
+          </span>
+
         </div>
       )}
 
-      {/* SETTINGS FORM */}
+      {/* =========================
+          SETTINGS FORM
+      ========================= */}
 
       <form onSubmit={handleSave}>
-        {/* LIBRARY INFORMATION */}
+
+        {/* =========================
+            LIBRARY INFORMATION
+        ========================= */}
 
         <div className="settings-card">
+
           <div className="settings-card-header">
+
             <div className="settings-card-icon">
               <Building2 size={20} />
             </div>
 
             <div>
-              <h2>Library Information</h2>
-              <p>Basic information displayed across your system.</p>
+
+              <h2>
+                Library Information
+              </h2>
+
+              <p>
+                Basic information displayed
+                across your system.
+              </p>
+
             </div>
+
           </div>
 
           <div className="settings-form-grid">
-            {/* Library Name */}
+
+            {/* LIBRARY NAME */}
 
             <div className="settings-field full-width">
+
               <label htmlFor="libraryName">
                 Library Name
               </label>
 
               <div className="settings-input-wrapper">
+
                 <Building2 size={18} />
 
                 <input
                   id="libraryName"
                   name="libraryName"
                   type="text"
-                  value={settings.libraryName}
+                  value={
+                    settings.libraryName
+                  }
                   onChange={handleChange}
                   placeholder="Enter library name"
                   required
                 />
+
               </div>
+
             </div>
 
-            {/* Email */}
+            {/* EMAIL */}
 
             <div className="settings-field">
+
               <label htmlFor="email">
                 Email Address
               </label>
 
               <div className="settings-input-wrapper">
+
                 <Mail size={18} />
 
                 <input
                   id="email"
                   name="email"
                   type="email"
-                  value={settings.email}
+                  value={
+                    settings.email
+                  }
                   onChange={handleChange}
                   placeholder="library@example.com"
                 />
+
               </div>
+
             </div>
 
-            {/* Phone */}
+            {/* PHONE */}
 
             <div className="settings-field">
+
               <label htmlFor="phone">
                 Phone Number
               </label>
 
               <div className="settings-input-wrapper">
+
                 <Phone size={18} />
 
                 <input
                   id="phone"
                   name="phone"
                   type="text"
-                  value={settings.phone}
+                  value={
+                    settings.phone
+                  }
                   onChange={handleChange}
                   placeholder="+92 300 0000000"
                 />
+
               </div>
+
             </div>
 
-            {/* Address */}
+            {/* ADDRESS */}
 
             <div className="settings-field full-width">
+
               <label htmlFor="address">
                 Library Address
               </label>
 
               <div className="settings-input-wrapper">
+
                 <MapPin size={18} />
 
                 <input
                   id="address"
                   name="address"
                   type="text"
-                  value={settings.address}
+                  value={
+                    settings.address
+                  }
                   onChange={handleChange}
                   placeholder="Enter library address"
                 />
+
               </div>
+
             </div>
 
-            {/* Opening Hours */}
+            {/* OPENING HOURS */}
 
             <div className="settings-field full-width">
+
               <label htmlFor="openingHours">
                 Opening Hours
               </label>
 
               <div className="settings-input-wrapper">
+
                 <Clock3 size={18} />
 
                 <input
                   id="openingHours"
                   name="openingHours"
                   type="text"
-                  value={settings.openingHours}
+                  value={
+                    settings.openingHours
+                  }
                   onChange={handleChange}
                   placeholder="Monday - Saturday, 9:00 AM - 8:00 PM"
                 />
+
               </div>
+
             </div>
+
           </div>
+
         </div>
 
-        {/* BORROWING RULES */}
+        {/* =========================
+            BORROWING RULES
+        ========================= */}
 
         <div className="settings-card">
+
           <div className="settings-card-header">
+
             <div className="settings-card-icon">
               <BookOpen size={20} />
             </div>
 
             <div>
-              <h2>Borrowing Rules</h2>
+
+              <h2>
+                Borrowing Rules
+              </h2>
+
               <p>
-                Control how books are borrowed by library members.
+                Control how books are borrowed
+                by library members.
               </p>
+
             </div>
+
           </div>
 
           <div className="settings-form-grid">
-            {/* Borrowing Period */}
+
+            {/* BORROWING PERIOD */}
 
             <div className="settings-field">
+
               <label htmlFor="borrowingPeriod">
                 Borrowing Period
               </label>
 
               <div className="settings-number-wrapper">
+
                 <input
                   id="borrowingPeriod"
                   name="borrowingPeriod"
                   type="number"
                   min="1"
-                  value={settings.borrowingPeriod}
+                  value={
+                    settings.borrowingPeriod
+                  }
                   onChange={handleChange}
                   required
                 />
 
-                <span>days</span>
+                <span>
+                  days
+                </span>
+
               </div>
 
               <small>
-                Default number of days a member can keep a book.
+                Default number of days a member
+                can keep a book.
               </small>
+
             </div>
 
-            {/* Maximum Books */}
+            {/* MAX BOOKS */}
 
             <div className="settings-field">
+
               <label htmlFor="maxBooksPerMember">
                 Maximum Books Per Member
               </label>
 
               <div className="settings-number-wrapper">
+
                 <input
                   id="maxBooksPerMember"
                   name="maxBooksPerMember"
                   type="number"
                   min="1"
-                  value={settings.maxBooksPerMember}
+                  value={
+                    settings.maxBooksPerMember
+                  }
                   onChange={handleChange}
                   required
                 />
 
-                <span>books</span>
+                <span>
+                  books
+                </span>
+
               </div>
 
               <small>
-                Maximum active books a member can borrow.
+                Maximum active books a member
+                can borrow.
               </small>
+
             </div>
+
           </div>
+
         </div>
 
-        {/* SAVE AREA */}
+        {/* =========================
+            SAVE BUTTON
+        ========================= */}
 
         <div className="settings-actions">
+
           <button
             type="submit"
             className="settings-save-button"
             disabled={saving}
           >
+
             {saving ? (
               <>
-                <Loader2 size={18} className="settings-spinner" />
+                <Loader2
+                  size={18}
+                  className="settings-spinner"
+                />
+
                 Saving...
               </>
             ) : (
               <>
                 <Save size={18} />
+
                 Save Changes
               </>
             )}
+
           </button>
+
         </div>
+
       </form>
+
     </section>
   );
 };

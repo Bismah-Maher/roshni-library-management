@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import {
   Plus,
@@ -9,7 +10,10 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import "./BookManagement.css";
-const API_URL = "https://roshni-library-management-xh7y.vercel.app/api/books";
+
+const API_URL =
+  "https://roshni-library-management-xh7y.vercel.app/api/books";
+
 const emptyForm = {
   title: "",
   author: "",
@@ -29,21 +33,36 @@ function BookManagement() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Fetch real books from MongoDB through Express
+  // =========================
+  // FETCH BOOKS
+  // =========================
   const fetchBooks = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const response = await fetch(API_URL);
+      const response = await fetch(API_URL, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+
       const data = await response.json();
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to fetch books");
+      if (!response.ok) {
+        throw new Error(
+          data?.message || `Server returned ${response.status}`
+        );
       }
 
-      setBooks(data.books);
+      if (!data.success) {
+        throw new Error(data?.message || "Failed to fetch books");
+      }
+
+      setBooks(Array.isArray(data.books) ? data.books : []);
     } catch (err) {
+      console.error("FETCH BOOKS ERROR:", err);
       setError(err.message || "Unable to connect to the server");
     } finally {
       setLoading(false);
@@ -54,6 +73,9 @@ function BookManagement() {
     fetchBooks();
   }, []);
 
+  // =========================
+  // FORM CHANGE
+  // =========================
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -63,93 +85,162 @@ function BookManagement() {
     }));
   };
 
+  // =========================
+  // OPEN ADD MODAL
+  // =========================
   const openAddModal = () => {
     setEditingBook(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
     setError("");
     setShowModal(true);
   };
 
+  // =========================
+  // OPEN EDIT MODAL
+  // =========================
   const openEditModal = (book) => {
     setEditingBook(book);
 
     setForm({
-      title: book.title,
-      author: book.author,
-      category: book.category,
-      language: book.language,
-      totalCopies: book.totalCopies,
+      title: book.title || "",
+      author: book.author || "",
+      category: book.category || "",
+      language: book.language || "English",
+      totalCopies: book.totalCopies || 1,
     });
 
     setError("");
     setShowModal(true);
   };
 
+  // =========================
+  // CLOSE MODAL
+  // =========================
   const closeModal = () => {
     if (saving) return;
 
     setShowModal(false);
     setEditingBook(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
+    setError("");
   };
 
+  // =========================
+  // ADD / UPDATE BOOK
+  // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (saving) return;
+
+    setError("");
+
+    const payload = {
+      title: form.title.trim(),
+      author: form.author.trim(),
+      category: form.category.trim(),
+      language: form.language,
+      totalCopies: Number(form.totalCopies),
+    };
+
+    // Frontend validation
+    if (!payload.title) {
+      setError("Please enter the book title.");
+      return;
+    }
+
+    if (!payload.author) {
+      setError("Please enter the author name.");
+      return;
+    }
+
+    if (!payload.category) {
+      setError("Please enter the book category.");
+      return;
+    }
+
+    if (!payload.language) {
+      setError("Please select a language.");
+      return;
+    }
+
+    if (!Number.isInteger(payload.totalCopies) || payload.totalCopies < 1) {
+      setError("Total copies must be at least 1.");
+      return;
+    }
+
     try {
       setSaving(true);
-      setError("");
 
-      const payload = {
-        title: form.title.trim(),
-        author: form.author.trim(),
-        category: form.category.trim(),
-        language: form.language,
-        totalCopies: Number(form.totalCopies),
-      };
+      const isEditing = Boolean(editingBook);
 
-      if (!payload.title || !payload.author || !payload.category) {
-        setError("Please fill in all required fields.");
-        setSaving(false);
-        return;
+      const url = isEditing
+        ? `${API_URL}/${editingBook._id}`
+        : API_URL;
+
+      const method = isEditing ? "PUT" : "POST";
+
+      console.log("BOOK REQUEST:", {
+        method,
+        url,
+        payload,
+      });
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      // Safely read response
+      const responseText = await response.text();
+
+      let data;
+
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        data = {};
       }
 
-      let response;
+      console.log("BOOK RESPONSE:", {
+        status: response.status,
+        data,
+      });
 
-      if (editingBook) {
-        response = await fetch(`${API_URL}/${editingBook._id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
-      } else {
-        response = await fetch(API_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            `Request failed with status ${response.status}`
+        );
       }
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Something went wrong");
+      if (data.success === false) {
+        throw new Error(data.message || "Unable to save book.");
       }
 
       await fetchBooks();
 
       closeModal();
     } catch (err) {
-      setError(err.message || "Failed to save book");
+      console.error("SAVE BOOK ERROR:", err);
+
+      setError(
+        err.message ||
+          "Unable to save the book. Please check your backend."
+      );
     } finally {
       setSaving(false);
     }
   };
 
+  // =========================
+  // DELETE BOOK
+  // =========================
   const handleDelete = async (book) => {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${book.title}"?`
@@ -162,30 +253,57 @@ function BookManagement() {
 
       const response = await fetch(`${API_URL}/${book._id}`, {
         method: "DELETE",
+        headers: {
+          Accept: "application/json",
+        },
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
 
-      if (!response.ok || !data.success) {
+      let data;
+
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        data = {};
+      }
+
+      if (!response.ok) {
+        throw new Error(
+          data?.message ||
+            data?.error ||
+            `Delete failed with status ${response.status}`
+        );
+      }
+
+      if (!data.success) {
         throw new Error(data.message || "Failed to delete book");
       }
 
       await fetchBooks();
     } catch (err) {
+      console.error("DELETE BOOK ERROR:", err);
+
       setError(err.message || "Failed to delete book");
     }
   };
 
+  // =========================
+  // SEARCH
+  // =========================
   const filteredBooks = books.filter((book) => {
     const searchText = search.toLowerCase();
 
     return (
-      book.title.toLowerCase().includes(searchText) ||
-      book.author.toLowerCase().includes(searchText) ||
-      book.category.toLowerCase().includes(searchText)
+      book.title?.toLowerCase().includes(searchText) ||
+      book.author?.toLowerCase().includes(searchText) ||
+      book.category?.toLowerCase().includes(searchText)
     );
   });
 
+  // =========================
+  // UI
+  // =========================
   return (
     <section className="book-management">
       <div className="book-management-header">
@@ -200,16 +318,18 @@ function BookManagement() {
           </p>
         </div>
 
-        <button className="add-book-btn" onClick={openAddModal}>
+        <button
+          type="button"
+          className="add-book-btn"
+          onClick={openAddModal}
+        >
           <Plus size={18} />
           Add Book
         </button>
       </div>
 
       {error && !showModal && (
-        <div className="book-error">
-          {error}
-        </div>
+        <div className="book-error">{error}</div>
       )}
 
       <div className="book-toolbar">
@@ -238,6 +358,7 @@ function BookManagement() {
       ) : filteredBooks.length === 0 ? (
         <div className="book-state">
           <BookOpen size={42} />
+
           <h3>No books found</h3>
 
           <p>
@@ -272,7 +393,9 @@ function BookManagement() {
 
                       <div>
                         <strong>{book.title}</strong>
-                        <span>ID: {book._id.slice(-8)}</span>
+                        <span>
+                          ID: {book._id?.slice(-8)}
+                        </span>
                       </div>
                     </div>
                   </td>
@@ -304,6 +427,7 @@ function BookManagement() {
                   <td>
                     <div className="book-actions">
                       <button
+                        type="button"
                         className="icon-btn edit"
                         onClick={() => openEditModal(book)}
                         title="Edit book"
@@ -312,6 +436,7 @@ function BookManagement() {
                       </button>
 
                       <button
+                        type="button"
                         className="icon-btn delete"
                         onClick={() => handleDelete(book)}
                         title="Delete book"
@@ -333,7 +458,9 @@ function BookManagement() {
             <div className="book-modal-header">
               <div>
                 <span className="section-label">
-                  {editingBook ? "UPDATE CATALOGUE" : "NEW CATALOGUE ENTRY"}
+                  {editingBook
+                    ? "UPDATE CATALOGUE"
+                    : "NEW CATALOGUE ENTRY"}
                 </span>
 
                 <h3>
@@ -341,7 +468,12 @@ function BookManagement() {
                 </h3>
               </div>
 
-              <button className="modal-close" onClick={closeModal}>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={closeModal}
+                disabled={saving}
+              >
                 <X size={20} />
               </button>
             </div>
@@ -437,7 +569,10 @@ function BookManagement() {
                 >
                   {saving ? (
                     <>
-                      <LoaderCircle className="spin" size={17} />
+                      <LoaderCircle
+                        className="spin"
+                        size={17}
+                      />
                       Saving...
                     </>
                   ) : editingBook ? (

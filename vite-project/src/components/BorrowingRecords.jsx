@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import "./BorrowingRecords.css";
 
-const BORROWINGS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
+const BORROWINGS_API =
+  "https://roshni-library-management-xh7y.vercel.app/api/borrowings";
 
 function BorrowingRecords() {
   const [records, setRecords] = useState([]);
@@ -18,21 +19,34 @@ function BorrowingRecords() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // =========================
+  // LOAD BORROWING RECORDS
+  // =========================
   const loadRecords = async () => {
     try {
       setLoading(true);
       setError("");
 
+      console.log("GET BORROWING RECORDS:", BORROWINGS_API);
+
       const response = await fetch(BORROWINGS_API);
       const data = await response.json();
 
+      console.log("BORROWING RESPONSE:", data);
+
       if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to load borrowing records");
+        throw new Error(
+          data.message || "Failed to load borrowing records"
+        );
       }
 
       setRecords(data.records || []);
     } catch (err) {
-      setError(err.message || "Unable to load borrowing records");
+      console.error("BORROWING ERROR:", err);
+
+      setError(
+        err.message || "Unable to load borrowing records"
+      );
     } finally {
       setLoading(false);
     }
@@ -42,6 +56,9 @@ function BorrowingRecords() {
     loadRecords();
   }, []);
 
+  // =========================
+  // FORMAT DATE
+  // =========================
   const formatDate = (date) => {
     if (!date) return "—";
 
@@ -52,6 +69,9 @@ function BorrowingRecords() {
     });
   };
 
+  // =========================
+  // SEARCH + FILTER
+  // =========================
   const filteredRecords = records.filter((record) => {
     const bookTitle = record.book?.title || "";
     const bookAuthor = record.book?.author || "";
@@ -61,49 +81,71 @@ function BorrowingRecords() {
     const searchText =
       `${bookTitle} ${bookAuthor} ${memberName} ${memberId}`.toLowerCase();
 
-    const matchesSearch = searchText.includes(search.toLowerCase());
+    const matchesSearch = searchText.includes(
+      search.toLowerCase()
+    );
 
     let matchesFilter = true;
 
     if (filter === "Issued") {
-      matchesFilter = record.status === "Issued" && !record.isOverdue;
+      matchesFilter =
+        record.status === "Issued" &&
+        !record.isOverdue;
     }
 
     if (filter === "Overdue") {
-      matchesFilter = record.status === "Issued" && record.isOverdue;
+      matchesFilter =
+        record.status === "Issued" &&
+        record.isOverdue;
     }
 
     if (filter === "Returned") {
-      matchesFilter = record.status === "Returned";
+      matchesFilter =
+        record.status === "Returned";
     }
 
     return matchesSearch && matchesFilter;
   });
 
+  // =========================
+  // STATS
+  // =========================
   const totalRecords = records.length;
 
   const issuedCount = records.filter(
-    (record) => record.status === "Issued" && !record.isOverdue
+    (record) =>
+      record.status === "Issued" &&
+      !record.isOverdue
   ).length;
 
   const overdueCount = records.filter(
-    (record) => record.status === "Issued" && record.isOverdue
+    (record) =>
+      record.status === "Issued" &&
+      record.isOverdue
   ).length;
 
   const returnedCount = records.filter(
-    (record) => record.status === "Returned"
+    (record) =>
+      record.status === "Returned"
   ).length;
 
   return (
     <section className="borrowing-management">
+
+      {/* =========================
+          HEADER
+      ========================= */}
       <div className="borrowing-header">
         <div>
-          <span className="borrowing-eyebrow">CIRCULATION HISTORY</span>
+          <span className="borrowing-eyebrow">
+            CIRCULATION HISTORY
+          </span>
 
           <h1>Borrowing Records</h1>
 
           <p>
-            Complete history of books issued and returned by members.
+            Complete history of books issued and
+            returned by members.
           </p>
         </div>
 
@@ -117,6 +159,9 @@ function BorrowingRecords() {
         </button>
       </div>
 
+      {/* =========================
+          ERROR
+      ========================= */}
       {error && (
         <div className="borrowing-alert">
           <AlertCircle size={18} />
@@ -124,7 +169,11 @@ function BorrowingRecords() {
         </div>
       )}
 
+      {/* =========================
+          STATS
+      ========================= */}
       <div className="borrowing-stats">
+
         <div className="borrowing-stat-card">
           <div className="borrowing-stat-icon">
             <History size={20} />
@@ -168,9 +217,14 @@ function BorrowingRecords() {
             <strong>{returnedCount}</strong>
           </div>
         </div>
+
       </div>
 
+      {/* =========================
+          TOOLBAR
+      ========================= */}
       <div className="borrowing-toolbar">
+
         <div className="borrowing-search">
           <Search size={18} />
 
@@ -178,51 +232,96 @@ function BorrowingRecords() {
             type="text"
             placeholder="Search book, member or member ID..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
           />
         </div>
 
         <div className="borrowing-filters">
-          {["All", "Issued", "Overdue", "Returned"].map((item) => (
+          {[
+            "All",
+            "Issued",
+            "Overdue",
+            "Returned",
+          ].map((item) => (
             <button
               key={item}
-              className={filter === item ? "active" : ""}
+              className={
+                filter === item ? "active" : ""
+              }
               onClick={() => setFilter(item)}
             >
               {item}
             </button>
           ))}
         </div>
+
       </div>
 
+      {/* =========================
+          TABLE CARD
+      ========================= */}
       <div className="borrowing-table-card">
+
         <div className="borrowing-table-header">
+
           <div>
             <h2>All Borrowing Activity</h2>
-            <p>Live records retrieved from your library database.</p>
+
+            <p>
+              Live records retrieved from your
+              library database.
+            </p>
           </div>
 
           <span className="borrowing-count">
             {filteredRecords.length} record
-            {filteredRecords.length !== 1 ? "s" : ""}
+            {filteredRecords.length !== 1
+              ? "s"
+              : ""}
           </span>
+
         </div>
 
+        {/* LOADING */}
         {loading ? (
           <div className="borrowing-empty">
-            <RotateCcw className="borrowing-loading" size={28} />
+
+            <RotateCcw
+              className="borrowing-loading"
+              size={28}
+            />
+
             <h3>Loading records...</h3>
-            <p>Fetching live borrowing history.</p>
+
+            <p>
+              Fetching live borrowing history.
+            </p>
+
           </div>
         ) : filteredRecords.length === 0 ? (
+
+          /* EMPTY */
           <div className="borrowing-empty">
+
             <History size={30} />
+
             <h3>No records found</h3>
-            <p>There are no borrowing records matching your search.</p>
+
+            <p>
+              There are no borrowing records
+              matching your search.
+            </p>
+
           </div>
         ) : (
+
+          /* TABLE */
           <div className="borrowing-table-wrapper">
+
             <table className="borrowing-table">
+
               <thead>
                 <tr>
                   <th>BOOK</th>
@@ -235,67 +334,110 @@ function BorrowingRecords() {
               </thead>
 
               <tbody>
+
                 {filteredRecords.map((record) => (
+
                   <tr key={record._id}>
+
+                    {/* BOOK */}
                     <td>
                       <div className="borrowing-book">
-                        <div className="borrowing-book-icon">R</div>
+
+                        <div className="borrowing-book-icon">
+                          R
+                        </div>
 
                         <div>
+
                           <strong>
-                            {record.book?.title || "Unknown Book"}
+                            {record.book?.title ||
+                              "Unknown Book"}
                           </strong>
 
                           <small>
-                            {record.book?.author || "Unknown Author"}
+                            {record.book?.author ||
+                              "Unknown Author"}
                           </small>
+
                         </div>
+
                       </div>
                     </td>
 
+                    {/* MEMBER */}
                     <td>
                       <div className="borrowing-member">
+
                         <strong>
-                          {record.member?.name || "Unknown Member"}
+                          {record.member?.name ||
+                            "Unknown Member"}
                         </strong>
 
                         <small>
-                          {record.member?.memberId || "—"}
+                          {record.member?.memberId ||
+                            "—"}
                         </small>
+
                       </div>
                     </td>
 
-                    <td>{formatDate(record.issuedAt)}</td>
-
-                    <td>{formatDate(record.dueDate)}</td>
-
-                    <td>{formatDate(record.returnedAt)}</td>
-
+                    {/* ISSUED */}
                     <td>
-                      {record.status === "Returned" ? (
+                      {formatDate(record.issuedAt)}
+                    </td>
+
+                    {/* DUE DATE */}
+                    <td>
+                      {formatDate(record.dueDate)}
+                    </td>
+
+                    {/* RETURNED */}
+                    <td>
+                      {formatDate(record.returnedAt)}
+                    </td>
+
+                    {/* STATUS */}
+                    <td>
+
+                      {record.status ===
+                      "Returned" ? (
+
                         <span className="borrowing-status returned">
                           <CheckCircle size={14} />
                           Returned
                         </span>
+
                       ) : record.isOverdue ? (
+
                         <span className="borrowing-status overdue">
                           <AlertCircle size={14} />
                           Overdue
                         </span>
+
                       ) : (
+
                         <span className="borrowing-status issued">
                           <Clock size={14} />
                           Issued
                         </span>
+
                       )}
+
                     </td>
+
                   </tr>
+
                 ))}
+
               </tbody>
+
             </table>
+
           </div>
         )}
+
       </div>
+
     </section>
   );
 }

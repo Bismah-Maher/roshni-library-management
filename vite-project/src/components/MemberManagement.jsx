@@ -9,7 +9,8 @@ import {
 } from "lucide-react";
 import "./MemberManagement.css";
 
-const API_URL = "https://roshni-library-management-xh7y.vercel.app/api/books";
+const API_URL =
+  "https://roshni-library-management-xh7y.vercel.app/api/members";
 
 const emptyForm = {
   name: "",
@@ -31,14 +32,20 @@ function MemberManagement() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // =========================
   // GET MEMBERS
+  // =========================
   const fetchMembers = async () => {
     try {
       setLoading(true);
       setError("");
 
+      console.log("GET MEMBERS:", API_URL);
+
       const response = await fetch(API_URL);
       const data = await response.json();
+
+      console.log("MEMBERS RESPONSE:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to fetch members");
@@ -46,6 +53,7 @@ function MemberManagement() {
 
       setMembers(data.members || []);
     } catch (err) {
+      console.error("FETCH MEMBERS ERROR:", err);
       setError(err.message || "Failed to load members");
     } finally {
       setLoading(false);
@@ -56,7 +64,9 @@ function MemberManagement() {
     fetchMembers();
   }, []);
 
+  // =========================
   // INPUT CHANGE
+  // =========================
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -66,7 +76,9 @@ function MemberManagement() {
     }));
   };
 
+  // =========================
   // OPEN ADD MODAL
+  // =========================
   const openAddModal = () => {
     setEditingMember(null);
     setForm(emptyForm);
@@ -74,7 +86,9 @@ function MemberManagement() {
     setShowModal(true);
   };
 
+  // =========================
   // OPEN EDIT MODAL
+  // =========================
   const openEditModal = (member) => {
     setEditingMember(member);
 
@@ -91,7 +105,9 @@ function MemberManagement() {
     setShowModal(true);
   };
 
+  // =========================
   // CLOSE MODAL
+  // =========================
   const closeModal = () => {
     if (saving) return;
 
@@ -101,7 +117,9 @@ function MemberManagement() {
     setError("");
   };
 
-  // ADD / UPDATE
+  // =========================
+  // ADD / UPDATE MEMBER
+  // =========================
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -109,36 +127,60 @@ function MemberManagement() {
       setSaving(true);
       setError("");
 
+      const payload = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        memberId: form.memberId.trim(),
+        membershipType: form.membershipType,
+        status: form.status,
+      };
+
+      console.log("MEMBER PAYLOAD:", payload);
+
       const url = editingMember
         ? `${API_URL}/${editingMember._id}`
         : API_URL;
 
       const method = editingMember ? "PUT" : "POST";
 
+      console.log("MEMBER REQUEST:", method, url);
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
+      console.log("MEMBER RESPONSE:", data);
+
       if (!response.ok) {
-        throw new Error(data.message || "Something went wrong");
+        throw new Error(
+          data.message || "Failed to save member"
+        );
       }
 
       await fetchMembers();
+
       closeModal();
     } catch (err) {
-      setError(err.message || "Failed to save member");
+      console.error("SAVE MEMBER ERROR:", err);
+
+      setError(
+        err.message || "Failed to save member"
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  // DELETE
+  // =========================
+  // DELETE MEMBER
+  // =========================
   const handleDelete = async (id) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this member?"
@@ -149,25 +191,39 @@ function MemberManagement() {
     try {
       setError("");
 
-      const response = await fetch(`${API_URL}/${id}`, {
+      const url = `${API_URL}/${id}`;
+
+      console.log("DELETE MEMBER:", url);
+
+      const response = await fetch(url, {
         method: "DELETE",
       });
 
       const data = await response.json();
 
+      console.log("DELETE RESPONSE:", data);
+
       if (!response.ok) {
-        throw new Error(data.message || "Failed to delete member");
+        throw new Error(
+          data.message || "Failed to delete member"
+        );
       }
 
       await fetchMembers();
     } catch (err) {
-      setError(err.message || "Failed to delete member");
+      console.error("DELETE MEMBER ERROR:", err);
+
+      setError(
+        err.message || "Failed to delete member"
+      );
     }
   };
 
+  // =========================
   // SEARCH
+  // =========================
   const filteredMembers = members.filter((member) => {
-    const query = search.toLowerCase();
+    const query = search.toLowerCase().trim();
 
     return (
       member.name?.toLowerCase().includes(query) ||
@@ -179,30 +235,47 @@ function MemberManagement() {
 
   return (
     <section className="member-management">
+
+      {/* =========================
+          HEADER
+      ========================= */}
       <div className="member-header">
         <div>
-          <span className="section-label">MEMBER DIRECTORY</span>
+          <span className="section-label">
+            MEMBER DIRECTORY
+          </span>
 
           <h2>Members</h2>
 
           <p>
-            Manage registered library members and their membership details.
+            Manage registered library members and
+            their membership details.
           </p>
         </div>
 
-        <button className="add-member-btn" onClick={openAddModal}>
+        <button
+          className="add-member-btn"
+          onClick={openAddModal}
+        >
           <Plus size={18} />
           Add Member
         </button>
       </div>
 
+      {/* =========================
+          ERROR
+      ========================= */}
       {error && !showModal && (
         <div className="member-error">
           {error}
         </div>
       )}
 
+      {/* =========================
+          TOOLBAR
+      ========================= */}
       <div className="member-toolbar">
+
         <div className="member-search">
           <Search size={18} />
 
@@ -210,17 +283,26 @@ function MemberManagement() {
             type="text"
             placeholder="Search members..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
           />
         </div>
 
         <div className="member-count">
           <Users size={17} />
-          <span>{members.length} members</span>
+          <span>
+            {members.length} members
+          </span>
         </div>
+
       </div>
 
+      {/* =========================
+          TABLE
+      ========================= */}
       <div className="member-table-wrapper">
+
         {loading ? (
           <div className="member-empty">
             <p>Loading members...</p>
@@ -228,7 +310,9 @@ function MemberManagement() {
         ) : filteredMembers.length === 0 ? (
           <div className="member-empty">
             <Users size={42} />
+
             <h3>No members found</h3>
+
             <p>
               {search
                 ? "Try a different search."
@@ -237,6 +321,7 @@ function MemberManagement() {
           </div>
         ) : (
           <table className="member-table">
+
             <thead>
               <tr>
                 <th>MEMBER</th>
@@ -251,50 +336,70 @@ function MemberManagement() {
             <tbody>
               {filteredMembers.map((member) => (
                 <tr key={member._id}>
+
+                  {/* MEMBER */}
                   <td>
                     <div className="member-name-cell">
+
                       <div className="member-avatar">
-                        {member.name?.charAt(0).toUpperCase()}
+                        {member.name
+                          ?.charAt(0)
+                          .toUpperCase()}
                       </div>
 
                       <div>
-                        <strong>{member.name}</strong>
-                        <span>{member.email}</span>
+                        <strong>
+                          {member.name}
+                        </strong>
+
+                        <span>
+                          {member.email}
+                        </span>
                       </div>
+
                     </div>
                   </td>
 
+                  {/* MEMBER ID */}
                   <td>
                     <span className="member-id">
                       {member.memberId}
                     </span>
                   </td>
 
-                  <td>{member.phone}</td>
+                  {/* CONTACT */}
+                  <td>
+                    {member.phone}
+                  </td>
 
+                  {/* TYPE */}
                   <td>
                     <span className="type-badge">
                       {member.membershipType}
                     </span>
                   </td>
 
+                  {/* STATUS */}
                   <td>
                     <span
-                      className={`status-badge ${
-                        member.status === "Active"
+                      className={`status-badge ${member.status === "Active"
                           ? "active"
                           : "inactive"
-                      }`}
+                        }`}
                     >
                       {member.status}
                     </span>
                   </td>
 
+                  {/* ACTIONS */}
                   <td>
                     <div className="member-actions">
+
                       <button
                         className="icon-btn edit"
-                        onClick={() => openEditModal(member)}
+                        onClick={() =>
+                          openEditModal(member)
+                        }
                         title="Edit member"
                       >
                         <Pencil size={16} />
@@ -302,27 +407,42 @@ function MemberManagement() {
 
                       <button
                         className="icon-btn delete"
-                        onClick={() => handleDelete(member._id)}
+                        onClick={() =>
+                          handleDelete(member._id)
+                        }
                         title="Delete member"
                       >
                         <Trash2 size={16} />
                       </button>
+
                     </div>
                   </td>
+
                 </tr>
               ))}
             </tbody>
+
           </table>
         )}
+
       </div>
 
+      {/* =========================
+          MODAL
+      ========================= */}
       {showModal && (
         <div className="member-modal-overlay">
+
           <div className="member-modal">
+
+            {/* MODAL HEADER */}
             <div className="member-modal-header">
+
               <div>
                 <span className="section-label">
-                  {editingMember ? "UPDATE MEMBER" : "NEW MEMBER"}
+                  {editingMember
+                    ? "UPDATE MEMBER"
+                    : "NEW MEMBER"}
                 </span>
 
                 <h3>
@@ -339,18 +459,28 @@ function MemberManagement() {
               >
                 <X size={20} />
               </button>
+
             </div>
 
+            {/* MODAL ERROR */}
             {error && (
               <div className="member-error modal-error">
                 {error}
               </div>
             )}
 
+            {/* FORM */}
             <form onSubmit={handleSubmit}>
+
               <div className="form-grid">
+
+                {/* NAME */}
                 <div className="form-group full">
-                  <label>Full Name</label>
+
+                  <label>
+                    Full Name
+                  </label>
+
                   <input
                     type="text"
                     name="name"
@@ -359,10 +489,16 @@ function MemberManagement() {
                     placeholder="Enter member name"
                     required
                   />
+
                 </div>
 
+                {/* EMAIL */}
                 <div className="form-group">
-                  <label>Email</label>
+
+                  <label>
+                    Email
+                  </label>
+
                   <input
                     type="email"
                     name="email"
@@ -371,10 +507,16 @@ function MemberManagement() {
                     placeholder="member@email.com"
                     required
                   />
+
                 </div>
 
+                {/* PHONE */}
                 <div className="form-group">
-                  <label>Phone</label>
+
+                  <label>
+                    Phone
+                  </label>
+
                   <input
                     type="text"
                     name="phone"
@@ -383,10 +525,16 @@ function MemberManagement() {
                     placeholder="03XXXXXXXXX"
                     required
                   />
+
                 </div>
 
+                {/* MEMBER ID */}
                 <div className="form-group">
-                  <label>Member ID</label>
+
+                  <label>
+                    Member ID
+                  </label>
+
                   <input
                     type="text"
                     name="memberId"
@@ -395,39 +543,66 @@ function MemberManagement() {
                     placeholder="ROS-002"
                     required
                   />
+
                 </div>
 
+                {/* MEMBERSHIP TYPE */}
                 <div className="form-group">
-                  <label>Membership Type</label>
+
+                  <label>
+                    Membership Type
+                  </label>
 
                   <select
                     name="membershipType"
                     value={form.membershipType}
                     onChange={handleChange}
                   >
-                    <option value="Student">Student</option>
-                    <option value="Faculty">Faculty</option>
-                    <option value="General">General</option>
+                    <option value="Student">
+                      Student
+                    </option>
+
+                    <option value="Faculty">
+                      Faculty
+                    </option>
+
+                    <option value="General">
+                      General
+                    </option>
                   </select>
+
                 </div>
 
+                {/* STATUS */}
                 {editingMember && (
                   <div className="form-group">
-                    <label>Status</label>
+
+                    <label>
+                      Status
+                    </label>
 
                     <select
                       name="status"
                       value={form.status}
                       onChange={handleChange}
                     >
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
+                      <option value="Active">
+                        Active
+                      </option>
+
+                      <option value="Inactive">
+                        Inactive
+                      </option>
                     </select>
+
                   </div>
                 )}
+
               </div>
 
+              {/* FOOTER */}
               <div className="member-modal-footer">
+
                 <button
                   type="button"
                   className="cancel-btn"
@@ -445,14 +620,19 @@ function MemberManagement() {
                   {saving
                     ? "Saving..."
                     : editingMember
-                    ? "Update Member"
-                    : "Add Member"}
+                      ? "Update Member"
+                      : "Add Member"}
                 </button>
+
               </div>
+
             </form>
+
           </div>
+
         </div>
       )}
+
     </section>
   );
 }

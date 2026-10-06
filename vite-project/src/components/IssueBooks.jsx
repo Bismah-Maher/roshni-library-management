@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import {
   BookOpen,
@@ -10,9 +9,14 @@ import {
 } from "lucide-react";
 import "./IssueBooks.css";
 
-const BOOKS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
-const MEMBERS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
-const BORROWINGS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
+const BOOKS_API =
+  "https://roshni-library-management-xh7y.vercel.app/api/books";
+
+const MEMBERS_API =
+  "https://roshni-library-management-xh7y.vercel.app/api/members";
+
+const BORROWINGS_API =
+  "https://roshni-library-management-xh7y.vercel.app/api/borrowings";
 
 const getTomorrow = () => {
   const date = new Date();
@@ -50,56 +54,135 @@ function IssueBooks() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // =========================
+  // AVAILABLE BOOKS
+  // =========================
   const availableBooks = books.filter(
     (book) => Number(book.availableCopies) > 0
   );
 
+  // =========================
+  // ACTIVE MEMBERS
+  // =========================
   const activeMembers = members.filter(
     (member) => member.status === "Active"
   );
 
-  const selectedBook = books.find((book) => book._id === bookId);
+  // =========================
+  // SELECTED BOOK
+  // =========================
+  const selectedBook = books.find(
+    (book) => book._id === bookId
+  );
+
+  // =========================
+  // SELECTED MEMBER
+  // =========================
   const selectedMember = members.find(
     (member) => member._id === memberId
   );
 
+  // =========================
+  // FETCH ALL DATA
+  // =========================
   const fetchData = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const [booksResponse, membersResponse, recordsResponse] =
-        await Promise.all([
-          fetch(BOOKS_API),
-          fetch(MEMBERS_API),
-          fetch(BORROWINGS_API),
-        ]);
+      console.log("BOOKS API:", BOOKS_API);
+      console.log("MEMBERS API:", MEMBERS_API);
+      console.log("BORROWINGS API:", BORROWINGS_API);
 
-      const [booksData, membersData, recordsData] = await Promise.all([
+      const [
+        booksResponse,
+        membersResponse,
+        recordsResponse,
+      ] = await Promise.all([
+        fetch(BOOKS_API),
+        fetch(MEMBERS_API),
+        fetch(BORROWINGS_API),
+      ]);
+
+      const [
+        booksData,
+        membersData,
+        recordsData,
+      ] = await Promise.all([
         booksResponse.json(),
         membersResponse.json(),
         recordsResponse.json(),
       ]);
 
-      if (!booksResponse.ok || !booksData.success) {
-        throw new Error(booksData.message || "Could not load books");
-      }
+      console.log(
+        "BOOKS RESPONSE:",
+        booksData
+      );
 
-      if (!membersResponse.ok || !membersData.success) {
-        throw new Error(membersData.message || "Could not load members");
-      }
+      console.log(
+        "MEMBERS RESPONSE:",
+        membersData
+      );
 
-      if (!recordsResponse.ok || !recordsData.success) {
+      console.log(
+        "BORROWINGS RESPONSE:",
+        recordsData
+      );
+
+      // BOOKS
+      if (
+        !booksResponse.ok ||
+        !booksData.success
+      ) {
         throw new Error(
-          recordsData.message || "Could not load borrowing records"
+          booksData.message ||
+            "Could not load books"
         );
       }
 
-      setBooks(booksData.books || []);
-      setMembers(membersData.members || []);
-      setRecords(recordsData.records || []);
+      // MEMBERS
+      if (
+        !membersResponse.ok ||
+        !membersData.success
+      ) {
+        throw new Error(
+          membersData.message ||
+            "Could not load members"
+        );
+      }
+
+      // BORROWINGS
+      if (
+        !recordsResponse.ok ||
+        !recordsData.success
+      ) {
+        throw new Error(
+          recordsData.message ||
+            "Could not load borrowing records"
+        );
+      }
+
+      setBooks(
+        booksData.books || []
+      );
+
+      setMembers(
+        membersData.members || []
+      );
+
+      setRecords(
+        recordsData.records || []
+      );
     } catch (err) {
-      setError(err.message || "Unable to connect to the library server");
+      console.error(
+        "ISSUE BOOK DATA ERROR:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Unable to connect to the library server"
+      );
     } finally {
       setLoading(false);
     }
@@ -109,76 +192,168 @@ function IssueBooks() {
     fetchData();
   }, []);
 
+  // =========================
+  // ISSUE BOOK
+  // =========================
   const handleIssue = async (e) => {
     e.preventDefault();
 
     setError("");
     setSuccess("");
 
-    if (!bookId || !memberId || !dueDate) {
-      setError("Please select a book, member and due date.");
+    if (
+      !bookId ||
+      !memberId ||
+      !dueDate
+    ) {
+      setError(
+        "Please select a book, member and due date."
+      );
       return;
     }
 
     try {
       setSubmitting(true);
 
-      const response = await fetch(`${BORROWINGS_API}/issue`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          bookId,
-          memberId,
-          dueDate,
-        }),
-      });
+      const url =
+        `${BORROWINGS_API}/issue`;
 
-      const data = await response.json();
+      console.log(
+        "ISSUE BOOK REQUEST:",
+        url
+      );
 
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to issue book");
+      const payload = {
+        bookId,
+        memberId,
+        dueDate,
+      };
+
+      console.log(
+        "ISSUE BOOK PAYLOAD:",
+        payload
+      );
+
+      const response = await fetch(
+        url,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify(
+            payload
+          ),
+        }
+      );
+
+      const data =
+        await response.json();
+
+      console.log(
+        "ISSUE BOOK RESPONSE:",
+        data
+      );
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+        throw new Error(
+          data.message ||
+            "Failed to issue book"
+        );
       }
 
-      setSuccess("Book issued successfully!");
+      setSuccess(
+        "Book issued successfully!"
+      );
+
       setBookId("");
       setMemberId("");
       setDueDate("");
 
       await fetchData();
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      console.error(
+        "ISSUE BOOK ERROR:",
+        err
+      );
+
+      setError(
+        err.message ||
+          "Something went wrong"
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
-  const activeRecords = records.filter(
-    (record) => record.status === "Issued"
-  );
-
-  const filteredRecords = activeRecords.filter((record) => {
-    const query = search.toLowerCase();
-
-    return (
-      record.book?.title?.toLowerCase().includes(query) ||
-      record.member?.name?.toLowerCase().includes(query) ||
-      record.member?.memberId?.toLowerCase().includes(query)
+  // =========================
+  // ACTIVE RECORDS
+  // =========================
+  const activeRecords =
+    records.filter(
+      (record) =>
+        record.status === "Issued"
     );
-  });
 
-  const overdueCount = activeRecords.filter(
-    (record) => record.isOverdue
-  ).length;
+  // =========================
+  // SEARCH RECORDS
+  // =========================
+  const filteredRecords =
+    activeRecords.filter(
+      (record) => {
+        const query =
+          search.toLowerCase();
+
+        return (
+          record.book?.title
+            ?.toLowerCase()
+            .includes(query) ||
+          record.member?.name
+            ?.toLowerCase()
+            .includes(query) ||
+          record.member?.memberId
+            ?.toLowerCase()
+            .includes(query)
+        );
+      }
+    );
+
+  // =========================
+  // OVERDUE COUNT
+  // =========================
+  const overdueCount =
+    activeRecords.filter(
+      (record) =>
+        record.isOverdue
+    ).length;
 
   return (
     <section className="issue-management">
+
+      {/* =========================
+          HEADER
+      ========================= */}
       <div className="issue-header">
+
         <div>
-          <span className="issue-eyebrow">CIRCULATION MANAGEMENT</span>
-          <h2>Issue Books</h2>
-          <p>Record book loans and keep track of active borrowings.</p>
+
+          <span className="issue-eyebrow">
+            CIRCULATION MANAGEMENT
+          </span>
+
+          <h2>
+            Issue Books
+          </h2>
+
+          <p>
+            Record book loans and keep
+            track of active borrowings.
+          </p>
+
         </div>
 
         <button
@@ -190,168 +365,352 @@ function IssueBooks() {
           <RefreshCw size={16} />
           Refresh data
         </button>
+
       </div>
 
-      {error && <div className="issue-alert error">{error}</div>}
-      {success && <div className="issue-alert success">{success}</div>}
+      {/* =========================
+          ALERTS
+      ========================= */}
+      {error && (
+        <div className="issue-alert error">
+          {error}
+        </div>
+      )}
 
+      {success && (
+        <div className="issue-alert success">
+          {success}
+        </div>
+      )}
+
+      {/* =========================
+          STATS
+      ========================= */}
       <div className="issue-stats">
+
         <div className="issue-stat-card">
+
           <div className="issue-stat-icon">
             <BookOpen size={20} />
           </div>
+
           <div>
-            <span>Available titles</span>
-            <strong>{loading ? "—" : availableBooks.length}</strong>
+            <span>
+              Available titles
+            </span>
+
+            <strong>
+              {loading
+                ? "—"
+                : availableBooks.length}
+            </strong>
           </div>
+
         </div>
 
         <div className="issue-stat-card">
+
           <div className="issue-stat-icon">
             <Users size={20} />
           </div>
+
           <div>
-            <span>Active members</span>
-            <strong>{loading ? "—" : activeMembers.length}</strong>
+            <span>
+              Active members
+            </span>
+
+            <strong>
+              {loading
+                ? "—"
+                : activeMembers.length}
+            </strong>
           </div>
+
         </div>
 
         <div className="issue-stat-card">
+
           <div className="issue-stat-icon">
             <ArrowUpRight size={20} />
           </div>
+
           <div>
-            <span>Currently issued</span>
-            <strong>{loading ? "—" : activeRecords.length}</strong>
+            <span>
+              Currently issued
+            </span>
+
+            <strong>
+              {loading
+                ? "—"
+                : activeRecords.length}
+            </strong>
           </div>
+
         </div>
 
         <div className="issue-stat-card">
+
           <div className="issue-stat-icon overdue-icon">
             <CalendarDays size={20} />
           </div>
+
           <div>
-            <span>Overdue</span>
-            <strong>{loading ? "—" : overdueCount}</strong>
+            <span>
+              Overdue
+            </span>
+
+            <strong>
+              {loading
+                ? "—"
+                : overdueCount}
+            </strong>
           </div>
+
         </div>
+
       </div>
 
+      {/* =========================
+          CONTENT GRID
+      ========================= */}
       <div className="issue-content-grid">
+
+        {/* =========================
+            ISSUE FORM
+        ========================= */}
         <div className="issue-form-card">
+
           <div className="issue-card-heading">
-            <span className="issue-eyebrow">NEW TRANSACTION</span>
-            <h3>Issue a book</h3>
-            <p>Choose a registered member and an available book.</p>
+
+            <span className="issue-eyebrow">
+              NEW TRANSACTION
+            </span>
+
+            <h3>
+              Issue a book
+            </h3>
+
+            <p>
+              Choose a registered member
+              and an available book.
+            </p>
+
           </div>
 
           {loading ? (
-            <div className="issue-loading">Loading library data...</div>
+
+            <div className="issue-loading">
+              Loading library data...
+            </div>
+
           ) : (
-            <form onSubmit={handleIssue} className="issue-form">
+
+            <form
+              onSubmit={handleIssue}
+              className="issue-form"
+            >
+
+              {/* BOOK */}
               <div className="issue-field">
-                <label htmlFor="issue-book">Select book</label>
+
+                <label htmlFor="issue-book">
+                  Select book
+                </label>
 
                 <select
                   id="issue-book"
                   value={bookId}
-                  onChange={(e) => setBookId(e.target.value)}
+                  onChange={(e) =>
+                    setBookId(
+                      e.target.value
+                    )
+                  }
                   required
                 >
-                  <option value="">Choose a book</option>
 
-                  {availableBooks.map((book) => (
-                    <option key={book._id} value={book._id}>
-                      {book.title} — {book.author} ({book.availableCopies}{" "}
-                      available)
-                    </option>
-                  ))}
+                  <option value="">
+                    Choose a book
+                  </option>
+
+                  {availableBooks.map(
+                    (book) => (
+                      <option
+                        key={book._id}
+                        value={book._id}
+                      >
+                        {book.title} —{" "}
+                        {book.author} (
+                        {
+                          book.availableCopies
+                        }{" "}
+                        available)
+                      </option>
+                    )
+                  )}
+
                 </select>
 
                 {selectedBook && (
                   <span className="issue-field-hint">
-                    {selectedBook.availableCopies} of{" "}
-                    {selectedBook.totalCopies} copies currently available
+
+                    {
+                      selectedBook.availableCopies
+                    }{" "}
+                    of{" "}
+                    {
+                      selectedBook.totalCopies
+                    }{" "}
+                    copies currently
+                    available
+
                   </span>
                 )}
 
                 {!availableBooks.length && (
                   <span className="issue-field-hint">
-                    No books currently have available copies.
+                    No books currently have
+                    available copies.
                   </span>
                 )}
+
               </div>
 
+              {/* MEMBER */}
               <div className="issue-field">
-                <label htmlFor="issue-member">Select member</label>
+
+                <label htmlFor="issue-member">
+                  Select member
+                </label>
 
                 <select
                   id="issue-member"
                   value={memberId}
-                  onChange={(e) => setMemberId(e.target.value)}
+                  onChange={(e) =>
+                    setMemberId(
+                      e.target.value
+                    )
+                  }
                   required
                 >
-                  <option value="">Choose a member</option>
 
-                  {activeMembers.map((member) => (
-                    <option key={member._id} value={member._id}>
-                      {member.name} — {member.memberId}
-                    </option>
-                  ))}
+                  <option value="">
+                    Choose a member
+                  </option>
+
+                  {activeMembers.map(
+                    (member) => (
+                      <option
+                        key={member._id}
+                        value={member._id}
+                      >
+                        {member.name} —{" "}
+                        {
+                          member.memberId
+                        }
+                      </option>
+                    )
+                  )}
+
                 </select>
 
                 {selectedMember && (
                   <span className="issue-field-hint">
-                    {selectedMember.email}
+                    {
+                      selectedMember.email
+                    }
                   </span>
                 )}
 
                 {!activeMembers.length && (
                   <span className="issue-field-hint">
-                    No active members are registered.
+                    No active members are
+                    registered.
                   </span>
                 )}
+
               </div>
 
+              {/* DUE DATE */}
               <div className="issue-field">
-                <label htmlFor="issue-due-date">Due date</label>
+
+                <label htmlFor="issue-due-date">
+                  Due date
+                </label>
 
                 <div className="issue-date-input">
-                  <CalendarDays size={17} />
+
+                  <CalendarDays
+                    size={17}
+                  />
+
                   <input
                     id="issue-due-date"
                     type="date"
                     min={getTomorrow()}
                     value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
+                    onChange={(e) =>
+                      setDueDate(
+                        e.target.value
+                      )
+                    }
                     required
                   />
+
                 </div>
 
                 <span className="issue-field-hint">
-                  Select the date by which the book must be returned.
+                  Select the date by which
+                  the book must be returned.
                 </span>
+
               </div>
 
+              {/* SUMMARY */}
               <div className="issue-selection-summary">
-                <span>ISSUE SUMMARY</span>
+
+                <span>
+                  ISSUE SUMMARY
+                </span>
 
                 <div>
-                  <small>Book</small>
-                  <strong>{selectedBook?.title || "Not selected"}</strong>
+                  <small>
+                    Book
+                  </small>
+
+                  <strong>
+                    {selectedBook?.title ||
+                      "Not selected"}
+                  </strong>
                 </div>
 
                 <div>
-                  <small>Member</small>
-                  <strong>{selectedMember?.name || "Not selected"}</strong>
+                  <small>
+                    Member
+                  </small>
+
+                  <strong>
+                    {selectedMember?.name ||
+                      "Not selected"}
+                  </strong>
                 </div>
 
                 <div>
-                  <small>Return by</small>
-                  <strong>{dueDate ? formatDate(dueDate) : "Not selected"}</strong>
+                  <small>
+                    Return by
+                  </small>
+
+                  <strong>
+                    {dueDate
+                      ? formatDate(
+                          dueDate
+                        )
+                      : "Not selected"}
+                  </strong>
                 </div>
+
               </div>
 
+              {/* SUBMIT */}
               <button
                 type="submit"
                 className="issue-submit-btn"
@@ -362,80 +721,170 @@ function IssueBooks() {
                   !activeMembers.length
                 }
               >
-                {submitting ? "Processing..." : "Confirm book issue"}
-                {!submitting && <ArrowUpRight size={17} />}
+
+                {submitting
+                  ? "Processing..."
+                  : "Confirm book issue"}
+
+                {!submitting && (
+                  <ArrowUpRight
+                    size={17}
+                  />
+                )}
+
               </button>
+
             </form>
           )}
+
         </div>
 
+        {/* =========================
+            GUIDELINES
+        ========================= */}
         <div className="issue-side-card">
+
           <div className="issue-side-icon">
             <BookOpen size={25} />
           </div>
 
-          <span className="issue-eyebrow">LIBRARY GUIDELINES</span>
-          <h3>Keep every loan accounted for.</h3>
+          <span className="issue-eyebrow">
+            LIBRARY GUIDELINES
+          </span>
+
+          <h3>
+            Keep every loan accounted
+            for.
+          </h3>
 
           <p>
-            Each issue creates a borrowing record linked to the actual book
-            and registered member.
+            Each issue creates a
+            borrowing record linked to
+            the actual book and
+            registered member.
           </p>
 
           <div className="issue-guideline">
-            <span>01</span>
-            <p>Only active registered members can borrow books.</p>
+
+            <span>
+              01
+            </span>
+
+            <p>
+              Only active registered
+              members can borrow books.
+            </p>
+
           </div>
 
           <div className="issue-guideline">
-            <span>02</span>
-            <p>A book cannot be issued when no copies are available.</p>
+
+            <span>
+              02
+            </span>
+
+            <p>
+              A book cannot be issued
+              when no copies are
+              available.
+            </p>
+
           </div>
 
           <div className="issue-guideline">
-            <span>03</span>
-            <p>Overdue status is calculated from the saved due date.</p>
+
+            <span>
+              03
+            </span>
+
+            <p>
+              Overdue status is
+              calculated from the saved
+              due date.
+            </p>
+
           </div>
+
         </div>
+
       </div>
 
+      {/* =========================
+          CURRENTLY ISSUED
+      ========================= */}
       <div className="issued-records-card">
+
         <div className="issued-records-header">
+
           <div>
-            <span className="issue-eyebrow">LIVE BORROWING DATA</span>
-            <h3>Currently issued books</h3>
+
+            <span className="issue-eyebrow">
+              LIVE BORROWING DATA
+            </span>
+
+            <h3>
+              Currently issued books
+            </h3>
+
           </div>
 
           <div className="issue-record-count">
-            {activeRecords.length} active loans
+            {activeRecords.length}{" "}
+            active loans
           </div>
+
         </div>
 
+        {/* SEARCH */}
         <div className="issued-search">
+
           <Search size={17} />
+
           <input
             type="text"
             placeholder="Search by book, member or member ID..."
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) =>
+              setSearch(
+                e.target.value
+              )
+            }
           />
+
         </div>
 
         {loading ? (
-          <div className="issue-empty">Loading borrowing records...</div>
-        ) : filteredRecords.length === 0 ? (
+
           <div className="issue-empty">
+            Loading borrowing
+            records...
+          </div>
+
+        ) : filteredRecords.length ===
+          0 ? (
+
+          <div className="issue-empty">
+
             <BookOpen size={34} />
-            <h4>No active issues found</h4>
+
+            <h4>
+              No active issues found
+            </h4>
+
             <p>
               {search
                 ? "Try another search term."
                 : "Issued books will appear here."}
             </p>
+
           </div>
+
         ) : (
+
           <div className="issued-table-scroll">
+
             <table className="issued-table">
+
               <thead>
                 <tr>
                   <th>BOOK</th>
@@ -447,37 +896,89 @@ function IssueBooks() {
               </thead>
 
               <tbody>
-                {filteredRecords.map((record) => (
-                  <tr key={record._id}>
-                    <td>
-                      <strong>{record.book?.title || "Book unavailable"}</strong>
-                      <span>{record.book?.author || "—"}</span>
-                    </td>
 
-                    <td>
-                      <strong>{record.member?.name || "Member unavailable"}</strong>
-                      <span>{record.member?.memberId || "—"}</span>
-                    </td>
+                {filteredRecords.map(
+                  (record) => (
+                    <tr
+                      key={record._id}
+                    >
 
-                    <td>{formatDate(record.issuedAt)}</td>
-                    <td>{formatDate(record.dueDate)}</td>
+                      {/* BOOK */}
+                      <td>
 
-                    <td>
-                      <span
-                        className={`issue-status ${
-                          record.isOverdue ? "overdue" : "issued"
-                        }`}
-                      >
-                        {record.isOverdue ? "Overdue" : "Issued"}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                        <strong>
+                          {record.book
+                            ?.title ||
+                            "Book unavailable"}
+                        </strong>
+
+                        <span>
+                          {record.book
+                            ?.author || "—"}
+                        </span>
+
+                      </td>
+
+                      {/* MEMBER */}
+                      <td>
+
+                        <strong>
+                          {record.member
+                            ?.name ||
+                            "Member unavailable"}
+                        </strong>
+
+                        <span>
+                          {record.member
+                            ?.memberId || "—"}
+                        </span>
+
+                      </td>
+
+                      {/* ISSUED */}
+                      <td>
+                        {formatDate(
+                          record.issuedAt
+                        )}
+                      </td>
+
+                      {/* DUE */}
+                      <td>
+                        {formatDate(
+                          record.dueDate
+                        )}
+                      </td>
+
+                      {/* STATUS */}
+                      <td>
+
+                        <span
+                          className={`issue-status ${
+                            record.isOverdue
+                              ? "overdue"
+                              : "issued"
+                          }`}
+                        >
+                          {record.isOverdue
+                            ? "Overdue"
+                            : "Issued"}
+                        </span>
+
+                      </td>
+
+                    </tr>
+                  )
+                )}
+
               </tbody>
+
             </table>
+
           </div>
         )}
+
       </div>
+
     </section>
   );
 }
