@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import "./LibrarySettings.css";
 
-const API_URL = "http://localhost:5000/api/settings";
+const API_URL = "https://roshni-library-management-xh7y.vercel.app/api/books";
 
 const defaultSettings = {
   libraryName: "",

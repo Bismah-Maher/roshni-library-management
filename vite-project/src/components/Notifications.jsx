@@ -10,8 +10,8 @@ import {
 } from "lucide-react";
 import "./Notifications.css";
 
-const BORROWINGS_API = "http://localhost:5000/api/borrowings";
-const BOOKS_API = "http://localhost:5000/api/books";
+const BORROWINGS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
+const BOOKS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
 
 function Notifications() {
   const [records, setRecords] = useState([]);

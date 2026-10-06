@@ -11,10 +11,10 @@ import {
 } from "lucide-react";
 import "./LibraryDashboard.css";
 
-const BOOKS_API = "http://localhost:5000/api/books";
-const MEMBERS_API = "http://localhost:5000/api/members";
-const BORROWINGS_API = "http://localhost:5000/api/borrowings";
-const CATEGORIES_API = "http://localhost:5000/api/categories";
+const BOOKS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
+const MEMBERS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
+const BORROWINGS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
+const CATEGORIES_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
 
 function LibraryDashboard() {
   const [books, setBooks] = useState([]);

@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import "./ReturnBooks.css";
 
-const BORROWINGS_API = "http://localhost:5000/api/borrowings";
+const BORROWINGS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
 
 function ReturnBooks() {
   const [records, setRecords] = useState([]);

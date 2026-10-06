@@ -11,8 +11,8 @@ import {
 } from "lucide-react";
 import "./CategoryManagement.css";
 
-const CATEGORIES_API = "http://localhost:5000/api/categories";
-const BOOKS_API = "http://localhost:5000/api/books";
+const CATEGORIES_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
+const BOOKS_API = "https://roshni-library-management-xh7y.vercel.app/api/books";
 
 function CategoryManagement() {
   const [categories, setCategories] = useState([]);
